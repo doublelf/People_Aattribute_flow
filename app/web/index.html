@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>perview · Person Counter (Pre-rendered Playback)</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">⏵</span>
+      <span class="title">perview</span>
+      <span class="subtitle">reComputer R + Hailo-8</span>
+    </div>
+    <div class="controls">
+      <label>
+        YOLO conf
+        <input id="yolo-thresh" type="range" min="0.10" max="0.90" step="0.05" value="0.50" />
+        <span id="yolo-thresh-val">0.50</span>
+      </label>
+      <label>
+        Attr conf
+        <input id="attr-thresh" type="range" min="0.10" max="0.90" step="0.05" value="0.50" />
+        <span id="attr-thresh-val">0.50</span>
+      </label>
+      <span class="nms-hint" title="NMS IoU is fixed in the HEF, not runtime-adjustable">NMS (HEF)</span>
+      <div class="size-toggle" title="Switch font scale">
+        <span class="label">Font</span>
+        <button type="button" data-scale="1.5" class="active">1.5&times;</button>
+        <button type="button" data-scale="1.8">1.8&times;</button>
+      </div>
+      <button id="reprocess-btn" type="button" title="Re-process video with current thresholds">&#x1F504; Reprocess</button>
+    </div>
+    <div class="upload">
+      <input id="upload-input" type="file" accept="video/mp4,video/quicktime,video/x-msvideo,video/*" hidden />
+      <button id="upload-btn" type="button" title="Upload local video (≤ 500MB)">&#x1F4C1; Upload Video</button>
+      <div class="upload-progress" id="upload-progress" hidden>
+        <div class="bar"><div class="fill" id="upload-fill"></div></div>
+        <div class="msg" id="upload-msg">Preparing...</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="preview">
+      <div class="preview-frame">
+        <video id="player" controls preload="auto" playsinline></video>
+      </div>
+      <div class="preview-meta">
+        <span id="time-display" class="time-display">--:-- / --:--</span>
+        <span class="output-name" id="output-name">Loading...</span>
+        <span class="reprocess-hint" id="reprocess-hint" hidden title="Cache uses different thresholds, click Reprocess">&#x26A0; Threshold Changed</span>
+      </div>
+    </section>
+
+    <section class="dashboard">
+      <div class="dash-cols">
+        <div class="dash-col realtime">
+          <h3 class="col-title">Realtime <span class="sub">(Current Frame)</span></h3>
+          <div class="cards">
+            <div class="card primary">
+              <div class="card-label">Current Count</div>
+              <div class="card-value" id="current-count">0</div>
+            </div>
+            <div class="card mini">
+              <div class="card-label">Duration</div>
+              <div class="card-value" id="duration">0:00</div>
+              <div class="card-sub" id="frame-idx">frame 0/0</div>
+            </div>
+            <div class="card mini">
+              <div class="card-label">Resolution</div>
+              <div class="card-value" id="resolution">--</div>
+              <div class="card-sub" id="fps-info">0 fps</div>
+            </div>
+          </div>
+          <div class="charts">
+            <div class="chart-card small">
+              <h3>Current Frame Gender</h3>
+              <canvas id="gender-rt-chart"></canvas>
+            </div>
+            <div class="chart-card small">
+              <h3>Current Frame Age</h3>
+              <canvas id="age-rt-chart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-col cumulative">
+          <h3 class="col-title">Cumulative <span class="sub">(Up to Current Frame)</span></h3>
+          <div class="cards">
+            <div class="card primary">
+              <div class="card-label">Cumulative Count</div>
+              <div class="card-value" id="cumulative-count">0</div>
+            </div>
+            <div class="card mini">
+              <div class="card-label">Male %</div>
+              <div class="card-value" id="male-pct">0.0%</div>
+              <div class="card-sub" id="male-count">M: 0</div>
+            </div>
+            <div class="card mini">
+              <div class="card-label">Female %</div>
+              <div class="card-value" id="female-pct">0.0%</div>
+              <div class="card-sub" id="female-count">F: 0</div>
+            </div>
+          </div>
+          <div class="charts">
+            <div class="chart-card small">
+              <h3>Cumulative Gender</h3>
+              <canvas id="gender-cum-chart"></canvas>
+            </div>
+            <div class="chart-card small">
+              <h3>Cumulative Age</h3>
+              <canvas id="age-cum-chart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-card wide tall">
+        <h3>Cumulative Trend (Start &rarr; Current Frame)</h3>
+        <canvas id="timeline-chart"></canvas>
+      </div>
+
+      <div class="status">
+        <span id="process-status" class="dot offline">&#x25CF;</span>
+        <span id="process-text">Not loaded</span>
+        <span class="spacer"></span>
+        <span id="last-update">--</span>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
